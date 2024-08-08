@@ -1,0 +1,310 @@
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
+using PuppeteerSharp;
+using WebScrappingDemo.Common.Constants;
+using WebScrappingDemo.Common.Exstensions;
+using WebScrappingDemo.Common.Utilities;
+using WebScrappingDemo.Domain.Entities;
+using WebScrappingDemo.Domain.Enums;
+using WebScrappingDemo.Domain.PuppeteerModels.OutageModels;
+
+namespace WebScrappingDemo.Services;
+
+public class PuppeteerService
+{
+    public async Task<BrowserSession> InitBrowserSession()
+    {
+        IBrowser browser = await Puppeteer.LaunchAsync(new LaunchOptions
+        {
+            Headless = true,
+            DefaultViewport = new ViewPortOptions() { Height = 1024, Width = 1366 }
+        });
+
+        IPage page = await browser.NewPageAsync();
+        await page.GoToAsync("https://yasno.com.ua/schedule-turn-off-electricity");
+
+        BrowserSession session = new BrowserSession
+        {
+            SessionId = Guid.NewGuid().ToString(),
+            Browser = browser,
+            Page = page
+        };
+
+        return session;
+    }
+
+    public async Task Demo()
+    {
+        await new BrowserFetcher().DownloadAsync();
+
+        IBrowser browser = await Puppeteer.LaunchAsync(new LaunchOptions
+        {
+            Headless = false,
+            DefaultViewport = new ViewPortOptions() { Height = 1024, Width = 1366 }
+        });
+
+        try
+        {
+            Stopwatch st = new Stopwatch();
+
+            await using IPage page = await browser.NewPageAsync();
+            await page.GoToAsync("https://yasno.com.ua/schedule-turn-off-electricity");
+
+            string userInput = "Дніпро";
+            //select region
+            await SelectRegion(page, userInput);
+
+            string userCityInput = "Дніпро";
+            //select City
+            List<DropdownOption> cityOptions = await InputCityAndGetOptions(page, userCityInput);
+
+            int userSelectedFirstElement = 0;
+            await cityOptions.SelectByIndexAndClickAsync(userSelectedFirstElement);
+
+            string userStreetInput = "Миру";
+            //select Street
+            List<DropdownOption> streetOptions = await InputStreetAndGetOptions(page, userStreetInput);
+            await streetOptions.SelectByIndexAndClickAsync(userSelectedFirstElement);
+
+            ////select HouseNumber
+            string userHouseNumberInput = "11";
+            List<DropdownOption> houseNumberOptions = await InputHouseNumberAndGetOptions(page, userHouseNumberInput);
+
+            await houseNumberOptions.SelectByIndexAndClickAsync(userSelectedFirstElement);
+
+            Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+            await page.WaitForSelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule");
+
+            //await GetScreenshotOfScheduleWithAddressTitle(page, userCityInput);
+
+            OutageSchedule schedule = new OutageSchedule();
+
+            IElementHandle scheduleGrid = await page.QuerySelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule");
+            IElementHandle[] scheduleGridCols = await scheduleGrid.QuerySelectorAllAsync(".col");
+
+            int hoursCol = 24;
+            int colStartIndex = 26;
+
+            //move to const name of Week
+            Task<OutageScheduleDay> monday = Task.Run(() => GetOutageSchedulePerDay(26, 26 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.MONDAY));
+            Task<OutageScheduleDay> tuesday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 2 - 1, colStartIndex * 2 - 1 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.TUESDAY));
+            Task<OutageScheduleDay> wednesday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 3 - 2, colStartIndex * 3 - 2 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.WEDNESDAY));
+            Task<OutageScheduleDay> thursday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 4 - 3, colStartIndex * 4 - 3 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.THURSDAY));
+            Task<OutageScheduleDay> friday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 5 - 4, colStartIndex * 5 - 4 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.FRIDAY));
+            Task<OutageScheduleDay> saturday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 6 - 5, colStartIndex * 6 - 5 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.SATURDAY));
+            Task<OutageScheduleDay> sunday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 7 - 6, colStartIndex * 7 - 6 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.SUNDAY));
+
+
+            //maybe for notification need to use linkedlist for cheking 
+            //maybe need to create a cash by city and group with schedule for prevent to fetching from DB
+            //and after first fetching upload to cache
+
+            //need thinked about notification before 5 min at start DateTime.Now + 5 =< 18 -> send 
+            OutageScheduleDay[] scheduleDays = await Task.WhenAll(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
+            schedule.ScheduleDays = scheduleDays.OrderBy(x => x.NumberWeekDay).ToList();
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+        finally
+        {
+            await browser.CloseAsync();
+        }
+    }
+
+    public static async Task SelectRegion(IPage page, string userInput)
+    {
+        await page.WaitForSelectorAsync("button.region-card");
+        IElementHandle[] regions = await page.QuerySelectorAllAsync("button.region-card");
+
+        foreach (IElementHandle? region in regions)
+        {
+            string innerText = await region.EvaluateFunctionAsync<string>("element => element.innerText");
+
+            if (innerText == userInput)
+            {
+                await region.ClickAsync();
+            }
+        }
+    }
+
+    public static async Task<List<DropdownOption>> InputCityAndGetOptions(IPage page, string userCityInput)
+    {
+        await page.WaitForSelectorAsync("#vs4__combobox");
+        await page.FocusAsync("#vs4__combobox > div.vs__selected-options > input");
+        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await page.ClickAsync("#vs4__combobox > div.vs__selected-options > input");
+
+        //input city
+        await page.Keyboard.SendCharacterAsync(userCityInput);
+        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        List<DropdownOption> cityOptions = await GetDropdownOptionsAsync(page, "#vs4__listbox");
+        return cityOptions;
+    }
+
+    public static async Task<List<DropdownOption>> InputStreetAndGetOptions(IPage page, string userStreetInput)
+    {
+        await page.WaitForSelectorAsync("#vs2__combobox");
+        await page.FocusAsync("#vs2__combobox > div.vs__selected-options > input");
+        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await page.ClickAsync("#vs2__combobox > div.vs__selected-options > input");
+        //input Street
+        await page.Keyboard.SendCharacterAsync(userStreetInput);
+        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        List<DropdownOption> streetOptions = await GetDropdownOptionsAsync(page, "#vs2__listbox");
+        return streetOptions;
+    }
+
+    public static async Task<List<DropdownOption>> InputHouseNumberAndGetOptions(IPage page, string userHouseNumberInput)
+    {
+        await page.WaitForSelectorAsync("#vs3__combobox");
+        await page.FocusAsync("#vs3__combobox > div.vs__selected-options > input");
+        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await page.ClickAsync("#vs3__combobox > div.vs__selected-options > input");
+        //input HouseNumber
+        await page.Keyboard.SendCharacterAsync(userHouseNumberInput);
+        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        List<DropdownOption> houseNumberOptions = await GetDropdownOptionsAsync(page, "#vs3__listbox");
+        return houseNumberOptions;
+    }
+
+    public static async Task<List<OutageScheduleDay>> GetOutageScheduleAsync(IPage page)
+    {
+        await page.WaitForSelectorAsync("div.schedule");
+
+        OutageSchedule schedule = new OutageSchedule();
+        //IElementHandle scheduleGrid = await page.QuerySelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule");
+        IElementHandle scheduleGrid = await page.QuerySelectorAsync("div.schedule");
+        IElementHandle[] scheduleGridCols = await scheduleGrid.QuerySelectorAllAsync(".col");
+
+        int hoursCol = 24;
+        int colStartIndex = 26;
+
+        Task<OutageScheduleDay> monday = Task.Run(() => GetOutageSchedulePerDay(26, 26 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.MONDAY));
+        Task<OutageScheduleDay> tuesday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 2 - 1, colStartIndex * 2 - 1 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.TUESDAY));
+        Task<OutageScheduleDay> wednesday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 3 - 2, colStartIndex * 3 - 2 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.WEDNESDAY));
+        Task<OutageScheduleDay> thursday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 4 - 3, colStartIndex * 4 - 3 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.THURSDAY));
+        Task<OutageScheduleDay> friday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 5 - 4, colStartIndex * 5 - 4 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.FRIDAY));
+        Task<OutageScheduleDay> saturday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 6 - 5, colStartIndex * 6 - 5 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.SATURDAY));
+        Task<OutageScheduleDay> sunday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 7 - 6, colStartIndex * 7 - 6 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.SUNDAY));
+
+        OutageScheduleDay[] scheduleDays = await Task.WhenAll(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
+        List<OutageScheduleDay> result = schedule.ScheduleDays = scheduleDays.OrderBy(x => x.NumberWeekDay).ToList();
+
+        return result;
+    }
+
+    public static async Task<byte[]> GetScreenshotOfScheduleWithAddressTitle(IPage page, string userCityInput)
+    {
+        IElementHandle? scheduleTitle = null;
+        //Get Title
+        var isScheduleTitle = await page.WaitForSelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.address-line", options: new WaitForSelectorOptions { Hidden = true });
+        if (isScheduleTitle is not null)
+        {
+            scheduleTitle = await page.QuerySelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.address-line");
+
+            //Change Attrs and Styles
+            await scheduleTitle.EvaluateFunctionAsync("element => element.setAttribute('style','text-align: center;')");
+            await scheduleTitle.EvaluateFunctionAsync($"element => element.innerText = '{userCityInput}'+', '+element.innerText");
+            await scheduleTitle.EvaluateFunctionAsync("element => element.setAttribute('class','description-title')");
+
+            await RemoveActiveStatusFromScheduleCols(page);
+
+            // Copy Schedule into Title
+            await MoveElementIntoAnother(page,
+                sourceSelector: "div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule",
+                targetSelector: "div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.description-title");
+        }
+        else
+        {
+            scheduleTitle = await page.QuerySelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.description-title");
+        }
+
+        // Take screenshot
+        byte[] imageBytes = await GetByteScreenshot(scheduleTitle);
+        return imageBytes;
+    }
+
+    /// <summary>
+    /// Select cols outage of specific day and convert to system object
+    /// </summary>
+    /// <param name="indexFrom">Start scheduleGridCols index of cols</param>
+    /// <param name="indexTo">End scheduleGridCols index of cols</param>
+    /// <param name="scheduleGridCols">All cols of schedule</param>
+    /// <param name="day">Convert parsed to system day of Schedule</param>
+    /// <exception cref="NotImplementedException"></exception>
+    private static OutageScheduleDay GetOutageSchedulePerDay(int indexFrom, int indexTo, IElementHandle[] scheduleGridCols, string dayName)
+    {
+        OutageScheduleDay schedulePerDay = new OutageScheduleDay(dayName, WeekDayConverter.GetDayOfWeekInt(dayName));
+        int indexOfTime = 0;
+
+        for (int i = indexFrom; i < indexTo; i++)
+        {
+            OutageStatus status = scheduleGridCols[i].RemoteObject.Description switch
+            {
+                var powerOff when powerOff.Contains(OutageScheduleConstants.HTML_Tags.OutageStatus.DEFINITE_OUTAGE) => OutageStatus.PowerOff,
+                var powerPossibleOn when powerPossibleOn.Contains(OutageScheduleConstants.HTML_Tags.OutageStatus.POSSIBLE_OUTAGE) => OutageStatus.PowerPossibleOn,
+                var powerOn when !powerOn.Contains(OutageScheduleConstants.HTML_Tags.OutageStatus.DEFINITE_OUTAGE) &&
+                        !powerOn.Contains(OutageScheduleConstants.HTML_Tags.OutageStatus.DEFINITE_OUTAGE) => OutageStatus.PowerOn,
+                _ => throw new NotImplementedException(),
+            };
+
+            schedulePerDay.OutageHours[indexOfTime].Status = status;
+            indexOfTime++;
+        }
+
+        return schedulePerDay;
+    }
+
+    private static async Task RemoveActiveStatusFromScheduleCols(IPage page)
+    {
+        IElementHandle scheduleGrid = await page.QuerySelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule");
+        IElementHandle[] todayActiveElements = await scheduleGrid.QuerySelectorAllAsync(".col.active");
+        foreach (IElementHandle? element in todayActiveElements)
+        {
+            await element.EvaluateFunctionAsync("element => element.classList.remove('active')");
+        }
+    }
+
+    private static async Task<byte[]> GetByteScreenshot(IElementHandle scheduleTitle, int quality = 100, ScreenshotType type = ScreenshotType.Jpeg)
+    {
+        return await scheduleTitle.ScreenshotDataAsync(new ElementScreenshotOptions { Quality = quality, Type = type });
+    }
+
+    private static async Task MoveElementIntoAnother(IPage page, string sourceSelector, string targetSelector)
+    {
+        // Define the JavaScript code to move one div into another
+        string script = $$"""
+                var sourceDiv = document.querySelector('{{sourceSelector}}');
+                    var targetDiv = document.querySelector('{{targetSelector}}');
+                    if (sourceDiv && targetDiv) {
+                        targetDiv.appendChild(sourceDiv);
+                    }
+                """;
+        // Execute the script
+        await page.EvaluateExpressionAsync(script);
+    }
+
+    private static async Task<List<DropdownOption>> GetDropdownOptionsAsync(IPage page, string optionNodeId)
+    {
+        List<DropdownOption> result = new List<DropdownOption>();
+
+        IElementHandle elementList = await page.QuerySelectorAsync(optionNodeId);
+
+        IElementHandle[] listOptions = await elementList.QuerySelectorAllAsync("[role='option']");
+
+        foreach (IElementHandle? option in listOptions)
+        {
+            //# vs2__option-0 > span > span
+            string optionTextValue = await option.EvaluateFunctionAsync<string>("element => element.textContent");
+            result.Add(new DropdownOption
+            {
+                Text = optionTextValue,
+                Node = option,
+            });
+        }
+
+        return result;
+    }
+}
