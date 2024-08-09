@@ -33,86 +33,6 @@ public class PuppeteerService
         return session;
     }
 
-    public async Task Demo()
-    {
-        await new BrowserFetcher().DownloadAsync();
-
-        IBrowser browser = await Puppeteer.LaunchAsync(new LaunchOptions
-        {
-            Headless = false,
-            DefaultViewport = new ViewPortOptions() { Height = 1024, Width = 1366 }
-        });
-
-        try
-        {
-            Stopwatch st = new Stopwatch();
-
-            await using IPage page = await browser.NewPageAsync();
-            await page.GoToAsync("https://yasno.com.ua/schedule-turn-off-electricity");
-
-            string userInput = "Дніпро";
-            //select region
-            await SelectRegion(page, userInput);
-
-            string userCityInput = "Дніпро";
-            //select City
-            List<DropdownOption> cityOptions = await InputCityAndGetOptions(page, userCityInput);
-
-            int userSelectedFirstElement = 0;
-            await cityOptions.SelectByIndexAndClickAsync(userSelectedFirstElement);
-
-            string userStreetInput = "Миру";
-            //select Street
-            List<DropdownOption> streetOptions = await InputStreetAndGetOptions(page, userStreetInput);
-            await streetOptions.SelectByIndexAndClickAsync(userSelectedFirstElement);
-
-            ////select HouseNumber
-            string userHouseNumberInput = "11";
-            List<DropdownOption> houseNumberOptions = await InputHouseNumberAndGetOptions(page, userHouseNumberInput);
-
-            await houseNumberOptions.SelectByIndexAndClickAsync(userSelectedFirstElement);
-
-            Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
-            await page.WaitForSelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule");
-
-            //await GetScreenshotOfScheduleWithAddressTitle(page, userCityInput);
-
-            OutageSchedule schedule = new OutageSchedule();
-
-            IElementHandle scheduleGrid = await page.QuerySelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule");
-            IElementHandle[] scheduleGridCols = await scheduleGrid.QuerySelectorAllAsync(".col");
-
-            int hoursCol = 24;
-            int colStartIndex = 26;
-
-            //move to const name of Week
-            Task<OutageScheduleDay> monday = Task.Run(() => GetOutageSchedulePerDay(26, 26 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.MONDAY));
-            Task<OutageScheduleDay> tuesday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 2 - 1, colStartIndex * 2 - 1 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.TUESDAY));
-            Task<OutageScheduleDay> wednesday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 3 - 2, colStartIndex * 3 - 2 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.WEDNESDAY));
-            Task<OutageScheduleDay> thursday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 4 - 3, colStartIndex * 4 - 3 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.THURSDAY));
-            Task<OutageScheduleDay> friday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 5 - 4, colStartIndex * 5 - 4 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.FRIDAY));
-            Task<OutageScheduleDay> saturday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 6 - 5, colStartIndex * 6 - 5 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.SATURDAY));
-            Task<OutageScheduleDay> sunday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 7 - 6, colStartIndex * 7 - 6 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.SUNDAY));
-
-
-            //maybe for notification need to use linkedlist for cheking 
-            //maybe need to create a cash by city and group with schedule for prevent to fetching from DB
-            //and after first fetching upload to cache
-
-            //need thinked about notification before 5 min at start DateTime.Now + 5 =< 18 -> send 
-            OutageScheduleDay[] scheduleDays = await Task.WhenAll(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
-            schedule.ScheduleDays = scheduleDays.OrderBy(x => x.NumberWeekDay).ToList();
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
-        finally
-        {
-            await browser.CloseAsync();
-        }
-    }
-
     public static async Task SelectRegion(IPage page, string userInput)
     {
         await page.WaitForSelectorAsync("button.region-card");
@@ -197,7 +117,7 @@ public class PuppeteerService
 
     public static async Task<byte[]> GetScreenshotOfScheduleWithAddressTitle(IPage page, string userCityInput)
     {
-        IElementHandle? scheduleTitle = null;
+        IElementHandle? scheduleTitle;
         //Get Title
         var isScheduleTitle = await page.WaitForSelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.address-line", options: new WaitForSelectorOptions { Hidden = true });
         if (isScheduleTitle is not null)

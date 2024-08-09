@@ -2,7 +2,7 @@
 
 namespace WebScrappingDemo.Domain.Entities;
 
-public class OutageHour
+public sealed class OutageHour
 {
     public int Hour { get; set; }
 

@@ -1,6 +1,6 @@
 ﻿namespace WebScrappingDemo.Domain.Entities;
 
-public class OutageScheduleDay
+public sealed class OutageScheduleDay
 {
     public OutageScheduleDay(string dayTitle, int numberWeekDay)
     {

@@ -120,6 +120,7 @@ public class OutageScheduleService
     {
         var session = GetAndExtendSession(sessionId);
 
+        //TODO: pass user city to image
         byte[] result = await PuppeteerService.GetScreenshotOfScheduleWithAddressTitle(session.Page, "");
         return result;
     }

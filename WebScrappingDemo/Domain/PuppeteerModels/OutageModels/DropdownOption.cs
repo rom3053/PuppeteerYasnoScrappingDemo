@@ -2,7 +2,7 @@
 
 namespace WebScrappingDemo.Domain.PuppeteerModels.OutageModels;
 
-public class DropdownOption
+public sealed class DropdownOption
 {
     public IElementHandle Node { get; set; }
 

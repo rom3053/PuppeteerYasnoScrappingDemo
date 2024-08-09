@@ -7,8 +7,6 @@ namespace WebScrappingDemo.Services;
 
 public class BrowserSessionStorage : IDisposable
 {
-    //private UnhandledExceptionEventHandler UnhandledExceptionEvent { get; }
-
     private EventHandler ProcessExitHandler { get; }
 
     private static ConcurrentDictionary<string, BrowserSession> _sessions = new ConcurrentDictionary<string, BrowserSession>();
@@ -55,7 +53,7 @@ public class BrowserSessionStorage : IDisposable
 
 public class BrowserSession : IDisposable, IAsyncDisposable
 {
-    public string SessionId { get; set; }
+    public string SessionId { get; set; } = Guid.NewGuid().ToString();
 
     public OutageInputStep CurrentInputStep { get; set; } = OutageInputStep.Step_0;
 

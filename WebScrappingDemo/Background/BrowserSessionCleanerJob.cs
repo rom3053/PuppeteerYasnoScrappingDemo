@@ -1,4 +1,5 @@
-﻿using WebScrappingDemo.Services;
+﻿using WebScrappingDemo.Configurations;
+using WebScrappingDemo.Services;
 
 namespace WebScrappingDemo.Background;
 
@@ -6,13 +7,16 @@ public class BrowserSessionCleanerJob : BackgroundService
 {
     private readonly ILogger<BrowserSessionCleanerJob> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly YasnoScrappingConfig _config;
     private readonly PeriodicTimer _periodicTimer;
 
     public BrowserSessionCleanerJob(IServiceProvider serviceProvider,
+        YasnoScrappingConfig config,
         ILogger<BrowserSessionCleanerJob> logger)
     {
-        _periodicTimer = new(TimeSpan.FromSeconds(90));
+        _periodicTimer = new(TimeSpan.FromSeconds(config.BrowserSession.SessionRecycleJobInSeconds));
         _serviceProvider = serviceProvider;
+        _config = config;
         _logger = logger;
     }
 
@@ -29,7 +33,7 @@ public class BrowserSessionCleanerJob : BackgroundService
                 var sessions = browserSessionStorage.Sessions;
 
                 var dateTimeNow = DateTime.UtcNow;
-                var expiredKeys = sessions.Where(x => x.Value.CreatedAt + TimeSpan.FromMinutes(5) < dateTimeNow)
+                var expiredKeys = sessions.Where(x => x.Value.CreatedAt + TimeSpan.FromMinutes(_config.BrowserSession.SessionLifeInMinutes) < dateTimeNow)
                     .Select(x => x.Key)
                     .ToArray();
 
