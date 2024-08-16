@@ -15,32 +15,32 @@ public class OutageScheduleInputController : ControllerBase
     }
 
     [HttpPost("{sessionId}/step-1-select-region")]
-    public async Task<IActionResult> SelectRegion([FromRoute] string sessionId, string userInput)
+    public async Task<IActionResult> SelectRegion([FromRoute] string sessionId, [FromBody] string userInput)
     {
         await _outageScheduleService.SelectRegion(sessionId, userInput);
         return Ok();
     }
 
     [HttpPost("{sessionId}/step-2-input-city")]
-    public async Task<object> InputCity([FromRoute] string sessionId, string userInput)
+    public async Task<object> InputCity([FromRoute] string sessionId, [FromBody] string userInput)
     {
         return await _outageScheduleService.InputCity(sessionId, userInput);
     }
 
     [HttpPost("{sessionId}/step-4-input-street")]
-    public async Task<object> InputStreet([FromRoute] string sessionId, string userInput)
+    public async Task<object> InputStreet([FromRoute] string sessionId, [FromBody] string userInput)
     {
         return await _outageScheduleService.InputStreet(sessionId, userInput);
     }
 
     [HttpPost("{sessionId}/step-6-input-house-number")]
-    public async Task<object> InputHouseNumber([FromRoute] string sessionId, string userInput)
+    public async Task<object> InputHouseNumber([FromRoute] string sessionId, [FromBody] string userInput)
     {
         return await _outageScheduleService.InputHouseNumber(sessionId, userInput);
     }
 
     [HttpPost("{sessionId}/step-3-5-7-select-option")]
-    public async Task<IActionResult> SelectOption([FromRoute] string sessionId, string optionIndex)
+    public async Task<IActionResult> SelectOption([FromRoute] string sessionId, [FromBody] string optionIndex)
     {
         await _outageScheduleService.SelectOption(sessionId, optionIndex);
         return Ok();

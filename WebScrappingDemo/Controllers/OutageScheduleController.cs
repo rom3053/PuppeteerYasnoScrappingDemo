@@ -4,7 +4,7 @@ using WebScrappingDemo.Services;
 namespace WebScrappingDemo.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class OutageScheduleController : ControllerBase
 {
     private readonly ILogger<OutageScheduleController> _logger;
