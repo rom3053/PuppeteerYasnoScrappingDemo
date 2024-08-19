@@ -1,4 +1,6 @@
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
+using WebScrappingDemo.Common.Dtos;
 using WebScrappingDemo.Services;
 
 namespace WebScrappingDemo.Controllers;
@@ -18,11 +20,18 @@ public class OutageScheduleController : ControllerBase
     }
 
     [HttpGet("{sessionId}/screenshot")]
-    public async Task<IActionResult> GetScreenshot([FromRoute] string sessionId)
+    public async Task<FileDto> GetScreenshot([FromRoute] string sessionId)
     {
 
         byte[] bytes = await _outageScheduleService.GetScreenshotOutageScheduleAsync(sessionId);
-        return File(bytes, "image/jpeg", $"OutageSchedule_{DateTime.UtcNow:yyyy-dd-MM-HH-mm-ss}.jpeg");
+
+        return new FileDto
+        {
+            Bytes = bytes,
+            Extension = "jpeg",
+            MediaType = "image/jpeg",
+            Name = $"OutageSchedule_{DateTime.UtcNow:yyyy-dd-MM-HH-mm-ss}.jpeg",
+        };
     }
 
     [HttpGet("{sessionId}/parsed-table")]
