@@ -1,5 +1,6 @@
 ﻿using WebScrappingDemo.Common.Dtos;
 using WebScrappingDemo.Common.Mapping.DropdownOption;
+using WebScrappingDemo.Domain.Enums;
 using WebScrappingDemo.Domain.PuppeteerModels.OutageModels;
 
 namespace WebScrappingDemo.Services;
@@ -75,7 +76,7 @@ public class OutageScheduleService
 
         List<DropdownOption> options = await PuppeteerService.InputStreetAndGetOptions(session.Page, street);
         session.DropdownOptions = options;
-        session.CurrentInputStep++;    
+        session.CurrentInputStep++;
         return options.MapToDto();
     }
 
@@ -86,24 +87,42 @@ public class OutageScheduleService
 
         List<DropdownOption> options = await PuppeteerService.InputHouseNumberAndGetOptions(session.Page, houseNumber);
         session.DropdownOptions = options;
-        session.CurrentInputStep++; 
+        session.CurrentInputStep++;
         return options.MapToDto();
     }
 
     // Step 3,5,7
-    public async Task SelectOption(string sessionId, string userOption)
+    public async Task<SelectedDropdownOptionDto> SelectOption(string sessionId, string userOption)
     {
+        DropdownOption? optionNode = default;
+
         var session = GetAndExtendSession(sessionId);
         bool isIndex = int.TryParse(userOption, out int optionIndex);
 
         if (isIndex)
         {
-            DropdownOption? optionNode = session.DropdownOptions.ElementAtOrDefault(optionIndex);
+            optionNode = session.DropdownOptions.ElementAtOrDefault(optionIndex);
             await optionNode.SelectAndClickAsync();
-        } //TODO: need validations 
-
+        }
+        
+        //need to set current step
         session.CurrentInputStep++;
-        return;
+
+        var selectedType = session.CurrentInputStep switch
+        {
+            OutageInputStep.Step_3 => SelectedOutageInputType.SelectedCity,
+            OutageInputStep.Step_5 => SelectedOutageInputType.SelectedStreet,
+            OutageInputStep.Step_7 => SelectedOutageInputType.SelectedHouseNumber,
+        };
+
+
+        //return data of current selected step
+        return new SelectedDropdownOptionDto
+        {
+            Index = optionIndex,
+            Text = optionNode?.Text,
+            SelectedOutageInputType = selectedType,
+        };
     }
 
     // Result 1

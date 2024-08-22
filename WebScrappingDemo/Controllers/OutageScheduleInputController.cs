@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using WebScrappingDemo.Common.Dtos;
 using WebScrappingDemo.Services;
 
 namespace WebScrappingDemo.Controllers;
@@ -40,9 +41,8 @@ public class OutageScheduleInputController : ControllerBase
     }
 
     [HttpPost("{sessionId}/step-3-5-7-select-option")]
-    public async Task<IActionResult> SelectOption([FromRoute] string sessionId, [FromBody] string optionIndex)
+    public async Task<SelectedDropdownOptionDto> SelectOption([FromRoute] string sessionId, [FromBody] string optionIndex)
     {
-        await _outageScheduleService.SelectOption(sessionId, optionIndex);
-        return Ok();
+        return await _outageScheduleService.SelectOption(sessionId, optionIndex);
     }
 }
