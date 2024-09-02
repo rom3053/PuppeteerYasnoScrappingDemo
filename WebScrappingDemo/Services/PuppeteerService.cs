@@ -93,7 +93,6 @@ public class PuppeteerService
     {
         await page.WaitForSelectorAsync("div.schedule");
 
-        OutageSchedule schedule = new OutageSchedule();
         //IElementHandle scheduleGrid = await page.QuerySelectorAsync("div.form-wr.s-meter.electricity-outages-schedule > div > div > div.right-side > div.schedule");
         IElementHandle scheduleGrid = await page.QuerySelectorAsync("div.schedule");
         IElementHandle[] scheduleGridCols = await scheduleGrid.QuerySelectorAllAsync(".col");
@@ -110,7 +109,7 @@ public class PuppeteerService
         Task<OutageScheduleDay> sunday = Task.Run(() => GetOutageSchedulePerDay(colStartIndex * 7 - 6, colStartIndex * 7 - 6 + hoursCol, scheduleGridCols, OutageScheduleConstants.WeekDays.SUNDAY));
 
         OutageScheduleDay[] scheduleDays = await Task.WhenAll(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
-        List<OutageScheduleDay> result = schedule.ScheduleDays = scheduleDays.OrderBy(x => x.NumberWeekDay).ToList();
+        List<OutageScheduleDay> result = scheduleDays.OrderBy(x => x.NumberWeekDay).ToList();
 
         return result;
     }
