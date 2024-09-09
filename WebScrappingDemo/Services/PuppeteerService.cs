@@ -12,6 +12,7 @@ public class PuppeteerService
 {
     public PuppeteerService()
     {
+        new BrowserFetcher().DownloadAsync().Wait();
     }
 
     public async Task<BrowserSession> InitBrowserSession()
