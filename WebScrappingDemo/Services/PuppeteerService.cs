@@ -19,10 +19,9 @@ public class PuppeteerService
 
     public async Task<BrowserSession> InitBrowserSession()
     {
-
-
         IBrowser browser = await Puppeteer.LaunchAsync(new LaunchOptions
         {
+            Args = new string[] { "--no-sandbox" },
             Headless = true,
             DefaultViewport = new ViewPortOptions() { Height = 1024, Width = 1366 }
         });
