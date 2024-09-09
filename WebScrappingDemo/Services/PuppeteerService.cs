@@ -12,8 +12,15 @@ namespace WebScrappingDemo.Services;
 
 public class PuppeteerService
 {
+    public PuppeteerService()
+    {
+        new BrowserFetcher().DownloadAsync();
+    }
+
     public async Task<BrowserSession> InitBrowserSession()
     {
+
+
         IBrowser browser = await Puppeteer.LaunchAsync(new LaunchOptions
         {
             Headless = true,
