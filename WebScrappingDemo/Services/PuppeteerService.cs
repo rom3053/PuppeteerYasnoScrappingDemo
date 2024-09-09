@@ -1,8 +1,6 @@
-﻿using System.Diagnostics;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using PuppeteerSharp;
 using WebScrappingDemo.Common.Constants;
-using WebScrappingDemo.Common.Exstensions;
 using WebScrappingDemo.Common.Utilities;
 using WebScrappingDemo.Domain.Entities;
 using WebScrappingDemo.Domain.Enums;
@@ -14,7 +12,6 @@ public class PuppeteerService
 {
     public PuppeteerService()
     {
-        new BrowserFetcher(new BrowserFetcherOptions { Platform = Platform.Linux }).DownloadAsync().Wait();
     }
 
     public async Task<BrowserSession> InitBrowserSession()
