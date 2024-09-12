@@ -20,10 +20,9 @@ public class OutageScheduleController : ControllerBase
     }
 
     [HttpGet("{sessionId}/screenshot")]
-    public async Task<FileDto> GetScreenshot([FromRoute] string sessionId)
+    public async Task<FileDto> GetScreenshot([FromRoute] string sessionId, [FromQuery] string cityName)
     {
-
-        byte[] bytes = await _outageScheduleService.GetScreenshotOutageScheduleAsync(sessionId);
+        byte[] bytes = await _outageScheduleService.GetScreenshotOutageScheduleAsync(sessionId, cityName);
 
         return new FileDto
         {

@@ -135,12 +135,11 @@ public class OutageScheduleService
     }
 
     // Result 2
-    public async Task<byte[]> GetScreenshotOutageScheduleAsync(string sessionId)
+    public async Task<byte[]> GetScreenshotOutageScheduleAsync(string sessionId, string cityName)
     {
         var session = GetAndExtendSession(sessionId);
 
-        //TODO: pass user city to image
-        byte[] result = await PuppeteerService.GetScreenshotOfScheduleWithAddressTitle(session.Page, "");
+        byte[] result = await PuppeteerService.GetScreenshotOfScheduleWithAddressTitle(session.Page, cityName);
         return result;
     }
 
