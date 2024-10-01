@@ -1,4 +1,3 @@
-using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
 using WebScrappingDemo.Common.Dtos;
 using WebScrappingDemo.Services;

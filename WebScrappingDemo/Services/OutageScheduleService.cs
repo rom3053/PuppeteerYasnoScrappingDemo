@@ -28,7 +28,7 @@ public class OutageScheduleService
                 session.SessionId,
                 session.CurrentInputStep,
                 session.CreatedAt,
-                DropdownOptionDtos = session.DropdownOptions.MapToDto(),
+                //DropdownOptionDtos = session.DropdownOptions.MapToDto(),
             };
         }
 

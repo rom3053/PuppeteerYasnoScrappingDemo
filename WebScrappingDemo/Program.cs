@@ -1,3 +1,5 @@
+using FastEndpoints;
+using FastEndpoints.Swagger;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using WebScrappingDemo.Background;
 using WebScrappingDemo.Configurations;
@@ -7,7 +9,8 @@ using WebScrappingDemo.Services;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+//builder.Services.AddFastEndpoints()
+//    .SwaggerDocument(o => o.TagCase = TagCase.None); //define a swagger document
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -37,8 +40,13 @@ if (app.Environment.IsDevelopment())
 
 //app.UseAuthorization();
 
-//ToDo: rework to fastEndpoints
 app.MapControllers();
+
+//app.UseFastEndpoints(c =>
+//{
+//    c.Endpoints.RoutePrefix = "api/endpoints";
+//})
+//    .UseSwaggerGen();
 
 app.Run();
 
