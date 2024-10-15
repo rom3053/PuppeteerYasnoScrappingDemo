@@ -1,4 +1,7 @@
-﻿using WebScrappingDemo.Common.Dtos;
+﻿using Microsoft.Extensions.Options;
+using WebScrappingDemo.Common.Dtos;
+using WebScrappingDemo.Common.Dtos.Requests.OutageScheduleInput;
+using WebScrappingDemo.Common.Dtos.Responses;
 using WebScrappingDemo.Common.Mapping.DropdownOption;
 using WebScrappingDemo.Domain.Enums;
 using WebScrappingDemo.Domain.PuppeteerModels.OutageModels;
@@ -36,15 +39,15 @@ public class OutageScheduleService
     }
 
     // Step 0
-    public async Task<object> InitSession()
+    public async Task<InitSessionResponse> InitSession()
     {
         BrowserSession session = await _puppeteerService.InitBrowserSession();
         _browserSessionStorage.Sessions.TryAdd(session.SessionId, session);
 
-        return new
+        return new InitSessionResponse
         {
-            sessionId = session.SessionId,
-            regionOptions = new string[] { "Київ", "Дніпро" },
+            SessionId = session.SessionId,
+            RegionOptions = ["Київ", "Дніпро"],
         };
     }
 
@@ -125,6 +128,36 @@ public class OutageScheduleService
         };
     }
 
+    public async Task<InitSessionResponse> AutomaticInputSteps(string sessionId, AutomaticInputRequest dto)
+    {
+        // step 1
+        await SelectRegion(sessionId, dto.RegionName);
+
+        //step 2 and 3
+        var options = await InputCity(sessionId, dto.CityName);
+        var optionIndex = options.Where(x => x.Text.Contains(dto.CityName)).Select(x => x.Index).FirstOrDefault(-1);
+        ValidateAutoInput(optionIndex);
+        await SelectOption(sessionId, optionIndex.ToString());
+
+        //step 4 and 5
+        options = await InputStreet(sessionId, dto.StreetName);
+        optionIndex = options.Where(x => x.Text.Contains(dto.StreetName)).Select(x => x.Index).FirstOrDefault(-1);
+        ValidateAutoInput(optionIndex);
+        await SelectOption(sessionId, optionIndex.ToString());
+
+        //step 6 and 7
+        options = await InputHouseNumber(sessionId, dto.HouseNumber);
+        optionIndex = options.Where(x => x.Text.Contains(dto.HouseNumber)).Select(x => x.Index).FirstOrDefault(-1);
+        ValidateAutoInput(optionIndex);
+        await SelectOption(sessionId, optionIndex.ToString());
+
+        return new InitSessionResponse
+        {
+            SessionId = sessionId,
+        };
+    }
+
+
     // Result 1
     public async Task<List<Domain.Entities.OutageScheduleDay>> GetOutageScheduleAsync(string sessionId)
     {
@@ -153,5 +186,13 @@ public class OutageScheduleService
         }
 
         return session;
+    }
+
+    private static void ValidateAutoInput(int index)
+    {
+        if (index == -1)
+        {
+            throw new Exception("Auto Input Error");
+        }
     }
 }

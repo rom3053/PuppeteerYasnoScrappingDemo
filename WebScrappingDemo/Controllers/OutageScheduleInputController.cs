@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebScrappingDemo.Common.Dtos;
+using WebScrappingDemo.Common.Dtos.Requests.OutageScheduleInput;
+using WebScrappingDemo.Common.Dtos.Responses;
 using WebScrappingDemo.Services;
 
 namespace WebScrappingDemo.Controllers;
@@ -44,5 +46,11 @@ public class OutageScheduleInputController : ControllerBase
     public async Task<SelectedDropdownOptionDto> SelectOption([FromRoute] string sessionId, [FromBody] string optionIndex)
     {
         return await _outageScheduleService.SelectOption(sessionId, optionIndex);
+    }
+
+    [HttpPost("{sessionId}/automatic-input")]
+    public async Task<InitSessionResponse> AutomaticInput([FromRoute] string sessionId, [FromBody] AutomaticInputRequest request)
+    {
+        return await _outageScheduleService.AutomaticInputSteps(sessionId, request);
     }
 }
