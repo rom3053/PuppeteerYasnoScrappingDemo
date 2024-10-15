@@ -10,7 +10,7 @@ namespace WebScrappingDemo.Services;
 
 public class PuppeteerService
 {
-    public PuppeteerService()
+    static PuppeteerService()
     {
         new BrowserFetcher().DownloadAsync().Wait();
     }
@@ -57,12 +57,12 @@ public class PuppeteerService
     {
         await page.WaitForSelectorAsync("#vs4__combobox");
         await page.FocusAsync("#vs4__combobox > div.vs__selected-options > input");
-        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
         await page.ClickAsync("#vs4__combobox > div.vs__selected-options > input");
 
         //input city
         await page.Keyboard.SendCharacterAsync(userCityInput);
-        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
         List<DropdownOption> cityOptions = await GetDropdownOptionsAsync(page, "#vs4__listbox");
         return cityOptions;
     }
@@ -71,11 +71,11 @@ public class PuppeteerService
     {
         await page.WaitForSelectorAsync("#vs2__combobox");
         await page.FocusAsync("#vs2__combobox > div.vs__selected-options > input");
-        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
         await page.ClickAsync("#vs2__combobox > div.vs__selected-options > input");
         //input Street
         await page.Keyboard.SendCharacterAsync(userStreetInput);
-        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
         List<DropdownOption> streetOptions = await GetDropdownOptionsAsync(page, "#vs2__listbox");
         return streetOptions;
     }
@@ -84,11 +84,11 @@ public class PuppeteerService
     {
         await page.WaitForSelectorAsync("#vs3__combobox");
         await page.FocusAsync("#vs3__combobox > div.vs__selected-options > input");
-        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
         await page.ClickAsync("#vs3__combobox > div.vs__selected-options > input");
         //input HouseNumber
         await page.Keyboard.SendCharacterAsync(userHouseNumberInput);
-        Task.Delay(RandomNumberGenerator.GetInt32(500, 1500)).Wait();
+        await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
         List<DropdownOption> houseNumberOptions = await GetDropdownOptionsAsync(page, "#vs3__listbox");
         return houseNumberOptions;
     }
