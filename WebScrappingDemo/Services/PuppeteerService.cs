@@ -55,41 +55,43 @@ public class PuppeteerService
 
     public static async Task<List<DropdownOption>> InputCityAndGetOptions(IPage page, string userCityInput)
     {
-        await page.WaitForSelectorAsync("#vs8__combobox");
-        await page.FocusAsync("#vs8__combobox > div.vs__selected-options > input");
+        await page.WaitForSelectorAsync("#vs6__combobox");
+        await page.ReloadAsync();
+        await page.WaitForSelectorAsync("#vs6__combobox");
+        await page.FocusAsync("#vs6__combobox > div.vs__selected-options > input");
         await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
-        await page.ClickAsync("#vs8__combobox > div.vs__selected-options > input");
+        await page.ClickAsync("#vs6__combobox > div.vs__selected-options > input");
 
         //input city
         await page.Keyboard.SendCharacterAsync(userCityInput);
         await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
-        List<DropdownOption> cityOptions = await GetDropdownOptionsAsync(page, "#vs8__listbox");
+        List<DropdownOption> cityOptions = await GetDropdownOptionsAsync(page, "#vs6__listbox");
         return cityOptions;
     }
 
     public static async Task<List<DropdownOption>> InputStreetAndGetOptions(IPage page, string userStreetInput)
     {
-        await page.WaitForSelectorAsync("#vs5__combobox");
-        await page.FocusAsync("#vs5__combobox > div.vs__selected-options > input");
+        await page.WaitForSelectorAsync("#vs7__combobox");
+        await page.FocusAsync("#vs7__combobox > div.vs__selected-options > input");
         await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
-        await page.ClickAsync("#vs5__combobox > div.vs__selected-options > input");
+        await page.ClickAsync("#vs7__combobox > div.vs__selected-options > input");
         //input Street
         await page.Keyboard.SendCharacterAsync(userStreetInput);
         await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
-        List<DropdownOption> streetOptions = await GetDropdownOptionsAsync(page, "#vs5__listbox");
+        List<DropdownOption> streetOptions = await GetDropdownOptionsAsync(page, "#vs7__listbox");
         return streetOptions;
     }
 
     public static async Task<List<DropdownOption>> InputHouseNumberAndGetOptions(IPage page, string userHouseNumberInput)
     {
-        await page.WaitForSelectorAsync("#vs6__combobox");
-        await page.FocusAsync("#vs6__combobox > div.vs__selected-options > input");
+        await page.WaitForSelectorAsync("#vs8__combobox");
+        await page.FocusAsync("#vs8__combobox > div.vs__selected-options > input");
         await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
-        await page.ClickAsync("#vs6__combobox > div.vs__selected-options > input");
+        await page.ClickAsync("#vs8__combobox > div.vs__selected-options > input");
         //input HouseNumber
         await page.Keyboard.SendCharacterAsync(userHouseNumberInput);
         await Task.Delay(RandomNumberGenerator.GetInt32(500, 1000));
-        List<DropdownOption> houseNumberOptions = await GetDropdownOptionsAsync(page, "#vs6__listbox");
+        List<DropdownOption> houseNumberOptions = await GetDropdownOptionsAsync(page, "#vs8__listbox");
         return houseNumberOptions;
     }
 
