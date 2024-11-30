@@ -11,7 +11,7 @@ public sealed class DropdownOption
     public async Task SelectAndClickAsync()
     {
         await this.Node.FocusAsync();
-        await Task.Delay(1000);
         await this.Node.ClickAsync();
+        await Task.Delay(1000);
     }
 }
